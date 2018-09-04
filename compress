@@ -8,7 +8,6 @@
 #
 # Example:
 # better-rotate conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
-from __future__ import print_function
 import datetime
 import os
 import shutil
@@ -16,6 +15,10 @@ import subprocess
 import sys
 
 COMPRESSED_EXTENSIONS = ["gz"]
+
+def log(msg):
+    sys.stdout.write(msg + "\n")
+    sys.stdout.flush()
 
 def broctl_config():
     #could do this using broctl in python directly, but this is more portable
@@ -64,7 +67,7 @@ def compress_file(f):
     ext = log.rsplit('.', 1)[-1]
 
     final_filename = '%s/%s.%s-%s.%s' % (day, base, open_hms, close_hms, ext)
-    #print(final_filename)
+    #log(final_filename)
 
     archived_filename = os.path.join(CFG['logdir'], final_filename)
     if ext not in COMPRESSED_EXTENSIONS and CFG['compresslogs'] == '1':
@@ -73,7 +76,7 @@ def compress_file(f):
         atomic_move(src, archived_filename)
 
 def atomic_move(src, dst):
-    print ("Atomic move %s to %s" % (src, dst))
+    log("Atomic move %s to %s" % (src, dst))
     dst_dir = os.path.dirname(dst)
     dst_file = os.path.basename(dst)
     if not os.path.isdir(dst_dir):
@@ -92,7 +95,7 @@ def atomic_compress(src, dst):
     ext = '.' + CFG['compressextension']
     dst_dir = os.path.dirname(dst)
     dst_file = os.path.basename(dst) + ext
-    print ("Atomic compress %s to %s" % (src, dst_file+ext))
+    log("Atomic compress %s to %s" % (src, dst_file))
 
     if not os.path.isdir(dst_dir):
         os.makedirs(dst_dir)
