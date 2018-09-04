@@ -32,5 +32,5 @@ mkdir -p $log_queue_dir
 
 tmp_filename="${input}__${open}__${close}"
 queue_filename=${log_queue_dir}/${tmp_filename}
-echo mv $input $queue_filename >> /tmp/rotate.log
+#echo mv $input $queue_filename >> /tmp/rotate.log
 mv $input $queue_filename
