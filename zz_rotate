@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# Bro postprocessor script to atomically rotate logs
+#
+# zz_rotate <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+#
+# For an explanation of the command-line options, see the "archive-log" script.
+#
+# Example:
+# zz_rotate conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
+
+if [ $# -ne 6 ]; then
+    echo "zz_rotate: wrong usage"
+    exit 1
+fi
+
+input=$1
+base=$2
+open=$3
+close=$4
+terminating=$5
+writer=$6
+
+. `dirname $0`/../broctl-config.sh
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+log_queue_dir=${spooldir}/log_queue
+
+mkdir -p $log_queue_dir
+
+tmp_filename="${input}__${open}__${close}"
+queue_filename=${log_queue_dir}/${tmp_filename}
+echo mv $input $queue_filename >> /tmp/rotate.log
+mv $input $queue_filename

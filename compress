@@ -1,0 +1,114 @@
+#!/usr/bin/env python2
+#
+# Bro postprocessor script to rotate logs atomically
+#
+# better-rotate <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
+#
+# For an explanation of the command-line options, see the "archive-log" script.
+#
+# Example:
+# better-rotate conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
+from __future__ import print_function
+import datetime
+import os
+import shutil
+import subprocess
+import sys
+
+COMPRESSED_EXTENSIONS = ["gz"]
+
+def broctl_config():
+    #could do this using broctl in python directly, but this is more portable
+    cfg = {}
+    out = subprocess.check_output(["broctl", "config"])
+    for line in out.splitlines():
+        if line.startswith("Warning"): continue
+        k, v = line.split(" = ", 1)
+        cfg[k] = v
+
+    return cfg
+CFG = broctl_config()
+
+def same_dev(p1, p2):
+    d1 = os.stat(p1).st_dev
+    d2 = os.stat(p2).st_dev
+    return d1 == d2
+
+def usage():
+    sys.stderr.write("better-rotate: wrong usage\n")
+    sys.exit(1)
+
+
+def parse_ts(ts):
+    first_part = ts.split("-")[0]
+    if len(first_part) == 2:
+        ts = "20" + ts
+    fixed = ts.replace('_', '-').replace('.', '-')
+    d = datetime.datetime.strptime(fixed, "%Y-%m-%d-%H-%M-%S")
+    return d
+
+def compress_file(f):
+    log_queue_dir = os.path.join(CFG["spooldir"], "log_queue")
+    src = os.path.join(log_queue_dir, f)
+
+    log, t_open, t_close = f.split("__")
+
+    ts_open  = parse_ts(t_open)
+    ts_close = parse_ts(t_close)
+
+    day = ts_open.strftime('%Y-%m-%d')
+    open_hms = ts_open.strftime('%H:%M:%S')
+    close_hms = ts_close.strftime('%H:%M:%S')
+
+    base = log.split('.', 1)[0]
+    ext = log.rsplit('.', 1)[-1]
+
+    final_filename = '%s/%s.%s-%s.%s' % (day, base, open_hms, close_hms, ext)
+    #print(final_filename)
+
+    archived_filename = os.path.join(CFG['logdir'], final_filename)
+    if ext not in COMPRESSED_EXTENSIONS and CFG['compresslogs'] == '1':
+        atomic_compress(src, archived_filename)
+    else:
+        atomic_move(src, archived_filename)
+
+def atomic_move(src, dst):
+    print ("Atomic move %s to %s" % (src, dst))
+    dst_dir = os.path.dirname(dst)
+    dst_file = os.path.basename(dst)
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir)
+
+    if same_dev(src, dst_dir):
+        os.rename(src, dst)
+        return
+
+    #rsync here?
+    dst_tmp = os.path.join(dst_dir, ".tmp." + dst_file)
+    shutil.copy(src, dst_tmp)
+    os.rename(dst_tmp, dst)
+
+def atomic_compress(src, dst):
+    ext = CFG['compressextension']
+    dst_dir = os.path.dirname(dst)
+    dst_file = os.path.basename(dst) + '.' + CFG['compressextension']
+    print ("Atomic compress %s to %s" % (src, dst_file))
+
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir)
+
+    dst_tmp = os.path.join(dst_dir, ".tmp." + dst_file)
+    with open(src) as f_src, open(dst_tmp, 'w') as f_dst:
+        subprocess.check_call(CFG['compresscmd'], shell=True, stdin=f_src, stdout=f_dst)
+
+    dst = dst + '.' + CFG['compressextension']
+    os.rename(dst_tmp, dst)
+    os.remove(src)
+
+def compress():
+    log_queue_dir = os.path.join(CFG["spooldir"], "log_queue")
+    for f in os.listdir(log_queue_dir):
+        compress_file(f)
+    
+if __name__ == "__main__":
+    compress()
