@@ -1,18 +1,13 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
-# Bro postprocessor script to rotate logs atomically
+# Background task to atomically compress and move bro log files
 #
-# better-rotate <rotated-file-name> <base-name> <timestamp-when-opened> <timestamp-when-closed> <terminating> <writer>
-#
-# For an explanation of the command-line options, see the "archive-log" script.
-#
-# Example:
-# better-rotate conn.2015-01-20-15-23-42.log conn 15-01-20_15.23.42 15-01-20_16.00.00 0 ascii
 import datetime
 import os
 import shutil
 import subprocess
 import sys
+import time
 
 COMPRESSED_EXTENSIONS = ["gz"]
 
@@ -23,7 +18,7 @@ def log(msg):
 def broctl_config():
     #could do this using broctl in python directly, but this is more portable
     cfg = {}
-    out = subprocess.check_output(["broctl", "config"])
+    out = subprocess.check_output(["broctl", "config"]).decode('utf-8')
     for line in out.splitlines():
         if line.startswith("Warning"): continue
         k, v = line.split(" = ", 1)
@@ -109,8 +104,26 @@ def atomic_compress(src, dst):
 
 def compress():
     log_queue_dir = os.path.join(CFG["spooldir"], "log_queue")
+    if not os.path.isdir(log_queue_dir):
+        os.makedirs(log_queue_dir)
+
+    rotated = 0
     for f in os.listdir(log_queue_dir):
         compress_file(f)
+        rotated += 1
+
+    return rotated
+
+def main():
+    while True:
+        s = time.time()
+        rotated = compress()
+        e = time.time()
+        if rotated:
+            log("Rotated %d files in %d seconds" % (rotated, e-s))
+
+        delay = 1 if rotated else 30
+        time.sleep(delay)
     
 if __name__ == "__main__":
-    compress()
+    main()
