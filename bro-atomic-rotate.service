@@ -1,0 +1,15 @@
+[Unit]
+Description=Bro Atomic Rotate
+After=network.target
+
+[Service]
+#User=bro
+#Group=bro
+#Don't immediately start compressing on boot
+ExecStartPre=/bin/sleep 60
+ExecStart=bro-atomic-rotate
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
