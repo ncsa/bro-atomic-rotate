@@ -89,10 +89,10 @@ def atomic_move(src, dst):
     os.rename(dst_tmp, dst)
 
 def atomic_compress(src, dst):
-    ext = CFG['compressextension']
+    ext = '.' + CFG['compressextension']
     dst_dir = os.path.dirname(dst)
-    dst_file = os.path.basename(dst) + '.' + CFG['compressextension']
-    print ("Atomic compress %s to %s" % (src, dst_file))
+    dst_file = os.path.basename(dst) + ext
+    print ("Atomic compress %s to %s" % (src, dst_file+ext))
 
     if not os.path.isdir(dst_dir):
         os.makedirs(dst_dir)
@@ -101,8 +101,7 @@ def atomic_compress(src, dst):
     with open(src) as f_src, open(dst_tmp, 'w') as f_dst:
         subprocess.check_call(CFG['compresscmd'], shell=True, stdin=f_src, stdout=f_dst)
 
-    dst = dst + '.' + CFG['compressextension']
-    os.rename(dst_tmp, dst)
+    os.rename(dst_tmp, dst+ext)
     os.remove(src)
 
 def compress():
