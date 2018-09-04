@@ -120,7 +120,7 @@ def main():
         rotated = compress()
         e = time.time()
         if rotated:
-            log("Rotated %d files in %d seconds" % (rotated, e-s))
+            log("archived files=%d seconds=%d" % (rotated, e-s))
 
         delay = 1 if rotated else 30
         time.sleep(delay)
