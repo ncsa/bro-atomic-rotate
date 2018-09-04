@@ -5,8 +5,7 @@ After=network.target
 [Service]
 #User=bro
 #Group=bro
-#Don't immediately start compressing on boot
-ExecStartPre=/bin/sleep 60
+Nice=10
 ExecStart=/usr/local/bin/bro-atomic-rotate
 Restart=on-failure
 RestartSec=10s
