@@ -108,19 +108,24 @@ def compress():
         os.makedirs(log_queue_dir)
 
     rotated = 0
+    errors = 0
     for f in os.listdir(log_queue_dir):
-        compress_file(f)
-        rotated += 1
+        try:
+            compress_file(f)
+            rotated += 1
+        except:
+            traceback.print_tb()
+            errors += 1
 
-    return rotated
+    return rotated, errors
 
 def main():
     while True:
         s = time.time()
-        rotated = compress()
+        rotated, errors = compress()
         e = time.time()
         if rotated:
-            log("archived files=%d seconds=%d" % (rotated, e-s))
+            log("archived files=%d errors=%d seconds=%d" % (rotated, errors, e-s))
 
         delay = 1 if rotated else 30
         time.sleep(delay)
