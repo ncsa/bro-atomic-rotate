@@ -20,7 +20,8 @@ def broctl_config():
     cfg = {}
     out = subprocess.check_output(["broctl", "config"]).decode('utf-8')
     for line in out.splitlines():
-        if line.startswith("Warning"): continue
+        if ' = ' not in line:
+            continue
         k, v = line.split(" = ", 1)
         cfg[k] = v
 
