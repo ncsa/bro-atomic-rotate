@@ -86,6 +86,7 @@ def atomic_move(src, dst):
     dst_tmp = os.path.join(dst_dir, ".tmp." + dst_file)
     shutil.copy(src, dst_tmp)
     os.rename(dst_tmp, dst)
+    os.remove(src)
 
 def atomic_compress(src, dst):
     ext = '.' + CFG['compressextension']
