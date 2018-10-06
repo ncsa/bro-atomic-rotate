@@ -1,7 +1,7 @@
 bro-atomic-rotate
 =================
 
-Installation:
+# Installation:
 
     cp zz_rotate /usr/local/bro/share/broctl/scripts/postprocessors/
     cp bro-atomic-rotate /usr/local/bin
