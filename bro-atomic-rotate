@@ -33,11 +33,6 @@ def same_dev(p1, p2):
     d2 = os.stat(p2).st_dev
     return d1 == d2
 
-def usage():
-    sys.stderr.write("better-rotate: wrong usage\n")
-    sys.exit(1)
-
-
 def parse_ts(ts):
     first_part = ts.split("-")[0]
     if len(first_part) == 2:
