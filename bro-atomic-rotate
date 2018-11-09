@@ -9,7 +9,13 @@ import subprocess
 import sys
 import time
 
-COMPRESSED_EXTENSIONS = ["gz"]
+# Bro currently only supports writing .gz files directly, but adding the most
+# common compression extensions now can't hurt.
+COMPRESSED_EXTENSIONS = ["gz", 'bz2', 'lz', 'lz4']
+
+# Since I'm using 'broctl config' instead of the broctl api some things are a
+# little harder than they should be
+TRUE_VALUES = ['1', 'on', 'true', 'yes']
 
 def log(msg):
     sys.stdout.write(msg + "\n")
@@ -61,7 +67,7 @@ def compress_file(f):
     #log(final_filename)
 
     archived_filename = os.path.join(CFG['logdir'], final_filename)
-    if ext not in COMPRESSED_EXTENSIONS and CFG['compresslogs'] == '1':
+    if ext not in COMPRESSED_EXTENSIONS and CFG['compresslogs'].lower() in TRUE_VALUES:
         atomic_compress(src, archived_filename)
     else:
         atomic_move(src, archived_filename)
