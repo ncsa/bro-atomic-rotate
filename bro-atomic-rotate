@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 
 # Bro currently only supports writing .gz files directly, but adding the most
 # common compression extensions now can't hurt.
@@ -117,7 +118,7 @@ def compress():
             compress_file(f)
             rotated += 1
         except:
-            traceback.print_tb()
+            traceback.print_exc()
             errors += 1
 
     return rotated, errors
